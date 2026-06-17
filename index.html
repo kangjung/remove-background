@@ -183,12 +183,8 @@
       <!-- ============ 구글 애드센스 광고 영역 (변환 중/작업 영역) — 디스플레이 2 ============ -->
       <!-- 처음엔 숨겨진 영역이라 화면이 보일 때 JS(showView)에서 push() 합니다. -->
       <section aria-label="ad" class="mb-5 min-h-[100px]">
-        <ins id="workAd" class="adsbygoogle"
-             style="display:block"
-             data-ad-client="ca-pub-2007216448786117"
-             data-ad-slot="5972583809"
-             data-ad-format="auto"
-             data-full-width-responsive="true"></ins>
+        <!-- 작업영역 광고: 숨김 상태에서 push가 자리를 소진하지 않도록, 화면에 보일 때 JS가 ins를 생성/로드 -->
+        <div id="workAdSlot"></div>
         <p id="adHint" data-i18n="ad_hint_wait" class="text-xs text-slate-500 mt-2 text-center">변환을 기다리는 동안 잠시 광고가 표시됩니다.</p>
       </section>
 
@@ -496,10 +492,15 @@
     function showView(view) {
       uploadView.classList.toggle('hidden', view !== 'upload');
       workspaceView.classList.toggle('hidden', view !== 'workspace');
-      // 작업영역 광고는 화면이 실제로 보일 때 1회만 로드 (숨김 상태 push 시 오류 방지)
+      // 작업영역 광고는 화면이 실제로 보일 때 ins를 생성하고 1회만 로드
+      // (숨김 상태에서 미리 두면 다른 push가 이 자리를 빈칸으로 소진해버리는 문제 방지)
       if (view === 'workspace' && !workspaceAdPushed) {
         workspaceAdPushed = true;
-        try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) { console.warn('adsense', e); }
+        const slot = document.getElementById('workAdSlot');
+        if (slot) {
+          slot.innerHTML = '<ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-2007216448786117" data-ad-slot="5972583809" data-ad-format="auto" data-full-width-responsive="true"></ins>';
+          try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) { console.warn('adsense', e); }
+        }
       }
     }
     function showError(msg) { errorText.textContent = msg; errorBox.classList.remove('hidden'); }
