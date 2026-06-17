@@ -92,7 +92,11 @@
     ::-webkit-scrollbar-thumb:hover { background: #475569; }
     .spinner { border-top-color: #38bdf8; animation: spin 0.9s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .lang-btn.active { background-color: #0ea5e9; color: #fff; }
+    .lang-btn.active, .bg-btn.active { background-color: #0ea5e9; color: #fff; }
+    /* Before/After 비교 슬라이더 */
+    .ba-stage { position: relative; overflow: hidden; touch-action: none; user-select: none; --pos: 50%; }
+    .ba-clip-left { clip-path: inset(0 calc(100% - var(--pos)) 0 0); }
+    .ba-handle { left: var(--pos); }
   </style>
 </head>
 
@@ -141,10 +145,11 @@
           </div>
           <div>
             <p data-i18n="upload_title" class="text-base sm:text-lg font-semibold text-white">이미지를 끌어다 놓거나 클릭하여 선택</p>
-            <p data-i18n="upload_sub" class="text-sm text-slate-400 mt-1">여러 장 동시 업로드 가능 · PNG · JPG · JPEG · WEBP (권장 장당 ~15MB)</p>
+            <p data-i18n="upload_sub" class="text-sm text-slate-400 mt-1">한 번에 최대 20장 · PNG · JPG · JPEG · WEBP (권장 장당 ~15MB)</p>
           </div>
-          <span class="inline-flex items-center gap-2 text-xs text-slate-500 mt-1">
-            <i data-lucide="lock" class="w-3.5 h-3.5"></i> <span data-i18n="upload_privacy">파일은 서버로 전송되지 않습니다</span>
+          <span class="inline-flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-slate-500 mt-1">
+            <span class="inline-flex items-center gap-1.5"><i data-lucide="lock" class="w-3.5 h-3.5"></i> <span data-i18n="upload_privacy">파일은 서버로 전송되지 않습니다</span></span>
+            <span class="inline-flex items-center gap-1.5"><i data-lucide="clipboard" class="w-3.5 h-3.5"></i> <span data-i18n="upload_paste">Ctrl+V로 붙여넣기 가능</span></span>
           </span>
         </div>
       </div>
@@ -188,7 +193,27 @@
         <p id="adHint" data-i18n="ad_hint_wait" class="text-xs text-slate-500 mt-2 text-center">변환을 기다리는 동안 잠시 광고가 표시됩니다.</p>
       </section>
 
-      <div id="cardsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5"></div>
+      <!-- 도구 바: 배경 교체 + 목록 접기/개수 -->
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-2 mb-4">
+        <div class="flex items-center gap-2">
+          <span data-i18n="bg_label" class="text-xs font-medium text-slate-400">배경</span>
+          <div id="bgSwitch" class="flex items-center gap-0.5 bg-slate-800 border border-slate-700 rounded-lg p-0.5 text-xs font-medium">
+            <button data-bg="transparent" class="bg-btn px-2.5 py-1 rounded-md text-slate-300 hover:text-white transition" data-i18n="bg_transparent">투명</button>
+            <button data-bg="white" class="bg-btn px-2.5 py-1 rounded-md text-slate-300 hover:text-white transition" data-i18n="bg_white">흰색</button>
+            <button data-bg="color" class="bg-btn px-2.5 py-1 rounded-md text-slate-300 hover:text-white transition" data-i18n="bg_color">색상</button>
+          </div>
+          <input id="bgColorInput" type="color" value="#3b82f6" class="hidden w-8 h-8 rounded-md border border-slate-600 bg-transparent cursor-pointer p-0" />
+        </div>
+
+        <div class="ml-auto flex items-center gap-3">
+          <span id="countLabel" class="text-xs text-slate-400"></span>
+          <button id="collapseBtn" class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-300 hover:text-white border border-slate-700 hover:border-slate-500 rounded-lg px-2.5 py-1.5 transition">
+            <i data-lucide="chevrons-down-up" class="w-4 h-4"></i> <span id="collapseLabel" data-i18n="collapse">접기</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="cardsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 max-h-[72vh] overflow-y-auto pr-1"></div>
     </section>
 
     <!-- ============ 구글 애드센스 광고 영역 (하단/가로형) — 디스플레이 3 ============ -->
@@ -303,10 +328,14 @@
         header_title: "오프라인 배경 제거기",
         header_subtitle: "서버로 전송되지 않는 안전한 오프라인 AI 누끼 제거 도구",
         upload_title: "이미지를 끌어다 놓거나 클릭하여 선택",
-        upload_sub: "여러 장 동시 업로드 가능 · PNG · JPG · JPEG · WEBP (권장 장당 ~15MB)",
-        upload_privacy: "파일은 서버로 전송되지 않습니다",
+        upload_sub: "한 번에 최대 20장 · PNG · JPG · JPEG · WEBP (권장 장당 ~15MB)",
+        upload_privacy: "파일은 서버로 전송되지 않습니다", upload_paste: "Ctrl+V로 붙여넣기 가능",
         btn_download_all: "전체 ZIP 다운로드", btn_reset: "새 작업", btn_zipping: "ZIP 생성 중...",
         card_download: "PNG 다운로드", toggle_original: "원본", toggle_result: "결과",
+        bg_label: "배경", bg_transparent: "투명", bg_white: "흰색", bg_color: "색상",
+        ba_before: "원본", ba_after: "결과",
+        err_limit: "한 번에 최대 {max}장까지 처리할 수 있습니다.",
+        count_label: "이미지 {n}개", collapse: "접기", expand: "펼치기",
         badge_pending: "대기", badge_processing: "처리 중", badge_done: "완료", badge_error: "실패",
         card_init: "AI 모델 로딩 중...", card_error: "처리 실패 — 다시 시도해 주세요",
         prog_model: "모델 로딩 {p}%", prog_nukki: "누끼 작업 {p}%",
@@ -340,10 +369,14 @@
         header_title: "Offline Background Remover",
         header_subtitle: "A safe, offline AI background removal tool — nothing is sent to a server",
         upload_title: "Drag & drop images, or click to select",
-        upload_sub: "Multiple files supported · PNG · JPG · JPEG · WEBP (up to ~15MB each)",
-        upload_privacy: "Files are never sent to a server",
+        upload_sub: "Up to 20 at once · PNG · JPG · JPEG · WEBP (up to ~15MB each)",
+        upload_privacy: "Files are never sent to a server", upload_paste: "Paste with Ctrl+V",
         btn_download_all: "Download all (ZIP)", btn_reset: "New task", btn_zipping: "Creating ZIP...",
         card_download: "Download PNG", toggle_original: "Original", toggle_result: "Result",
+        bg_label: "Background", bg_transparent: "Transparent", bg_white: "White", bg_color: "Color",
+        ba_before: "Before", ba_after: "After",
+        err_limit: "You can process up to {max} images at once.",
+        count_label: "{n} image(s)", collapse: "Collapse", expand: "Expand",
         badge_pending: "Queued", badge_processing: "Processing", badge_done: "Done", badge_error: "Failed",
         card_init: "Loading AI model...", card_error: "Failed — please try again",
         prog_model: "Loading model {p}%", prog_nukki: "Removing background {p}%",
@@ -377,10 +410,14 @@
         header_title: "オフライン背景透過ツール",
         header_subtitle: "サーバーに送信しない、安全なオフラインAI背景削除ツール",
         upload_title: "画像をドラッグ＆ドロップ、またはクリックして選択",
-        upload_sub: "複数枚同時アップロード可 · PNG · JPG · JPEG · WEBP（1枚あたり〜15MB推奨）",
-        upload_privacy: "ファイルはサーバーに送信されません",
+        upload_sub: "一度に最大20枚 · PNG · JPG · JPEG · WEBP（1枚あたり〜15MB推奨）",
+        upload_privacy: "ファイルはサーバーに送信されません", upload_paste: "Ctrl+Vで貼り付け可能",
         btn_download_all: "すべてZIPでダウンロード", btn_reset: "新規作業", btn_zipping: "ZIP作成中...",
         card_download: "PNGをダウンロード", toggle_original: "元画像", toggle_result: "結果",
+        bg_label: "背景", bg_transparent: "透明", bg_white: "白", bg_color: "色",
+        ba_before: "元画像", ba_after: "結果",
+        err_limit: "一度に最大{max}枚まで処理できます。",
+        count_label: "画像 {n}枚", collapse: "折りたたむ", expand: "展開",
         badge_pending: "待機", badge_processing: "処理中", badge_done: "完了", badge_error: "失敗",
         card_init: "AIモデル読み込み中...", card_error: "処理に失敗しました — もう一度お試しください",
         prog_model: "モデル読み込み {p}%", prog_nukki: "背景削除 {p}%",
@@ -467,12 +504,6 @@
         b.classList.toggle('active', b.getAttribute('data-lang') === lang);
       });
 
-      // 카드 토글 라벨(data-i18n) 동기화 후 일괄 번역
-      document.querySelectorAll('[data-role="toggle-label"]').forEach(el => {
-        const showingResult = el.getAttribute('data-state') !== 'original';
-        el.setAttribute('data-i18n', showingResult ? 'toggle_original' : 'toggle_result');
-      });
-
       applyI18n();
       if (jobs.length) updateOverall();
     }
@@ -495,6 +526,11 @@
 
     const ACCEPTED = ['image/png', 'image/jpeg', 'image/webp'];
     const MAX_BYTES = 15 * 1024 * 1024;
+    const MAX_FILES = 20;
+
+    const bgColorInput = document.getElementById('bgColorInput');
+    let bgMode = 'transparent';        // 'transparent' | 'white' | 'color'
+    let bgColor = bgColorInput.value;  // 'color' 모드에서 사용할 색
 
     let jobs = [];
     let jobSeq = 0;
@@ -535,15 +571,28 @@
           <span class="text-xs font-medium text-slate-300 truncate flex-1" title="${job.name}">${job.name}</span>
           <span data-role="badge" data-i18n="badge_pending" class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-700 text-slate-300"></span>
         </div>
-        <div data-role="stage" class="relative aspect-square flex items-center justify-center checkerboard">
-          <img data-role="img" alt="${job.name}" class="max-w-full max-h-full object-contain hidden" />
-          <div data-role="overlay" class="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-900/60 text-center px-3">
+        <div data-role="stage" class="ba-stage relative aspect-square cursor-ew-resize">
+          <!-- 바닥: 체커보드 → 결과(투명/합성) 이미지(전체) -->
+          <div class="absolute inset-0 checkerboard"></div>
+          <img data-role="res" alt="result" class="absolute inset-0 w-full h-full object-contain" />
+          <!-- 위: 원본 이미지 (핸들 왼쪽만 보이도록 클립) -->
+          <img data-role="orig" alt="original" class="ba-clip-left absolute inset-0 w-full h-full object-contain" />
+          <!-- 라벨 -->
+          <span data-role="labels" class="hidden">
+            <span class="absolute top-2 left-2 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-900/70 text-slate-200" data-i18n="ba_before"></span>
+            <span class="absolute top-2 right-2 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-900/70 text-slate-200" data-i18n="ba_after"></span>
+          </span>
+          <!-- 핸들 -->
+          <div data-role="handle" class="ba-handle hidden absolute top-0 bottom-0 w-0.5 bg-white/80 pointer-events-none">
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white shadow flex items-center justify-center text-slate-700">
+              <i data-lucide="move-horizontal" class="w-4 h-4"></i>
+            </div>
+          </div>
+          <!-- 처리 오버레이 -->
+          <div data-role="overlay" class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-slate-900/60 text-center px-3">
             <div class="spinner w-9 h-9 rounded-full border-[3px] border-slate-700"></div>
             <p data-role="overlay-text" class="text-xs text-slate-300"></p>
           </div>
-          <button data-role="toggle" type="button" class="hidden absolute top-2 right-2 inline-flex items-center gap-1 text-[11px] font-medium bg-slate-900/80 hover:bg-slate-900 border border-slate-600 text-slate-200 px-2 py-1 rounded-lg transition">
-            <i data-lucide="repeat" class="w-3 h-3"></i> <span data-role="toggle-label" data-state="result" data-i18n="toggle_original"></span>
-          </button>
         </div>
         <div class="p-3">
           <a data-role="download" href="#" download class="hidden items-center justify-center gap-1.5 w-full rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-100 text-sm font-medium px-3 py-2 transition">
@@ -554,20 +603,27 @@
       cardsGrid.appendChild(card);
       lucide.createIcons({ nodes: [card] });
 
-      let showingResult = true;
-      const imgEl = card.querySelector('[data-role="img"]');
-      const stageEl = card.querySelector('[data-role="stage"]');
-      const toggleBtn = card.querySelector('[data-role="toggle"]');
-      const toggleLabel = card.querySelector('[data-role="toggle-label"]');
-      toggleBtn.addEventListener('click', () => {
-        showingResult = !showingResult;
-        imgEl.src = showingResult ? job.resultURL : job.originalURL;
-        stageEl.classList.toggle('checkerboard', showingResult);
-        stageEl.classList.toggle('bg-slate-900/50', !showingResult);
-        toggleLabel.setAttribute('data-state', showingResult ? 'result' : 'original');
-        toggleLabel.setAttribute('data-i18n', showingResult ? 'toggle_original' : 'toggle_result');
-        toggleLabel.textContent = t(showingResult ? 'toggle_original' : 'toggle_result');
+      // 원본 즉시 표시
+      card.querySelector('[data-role="orig"]').src = job.originalURL;
+
+      // 비교 슬라이더 드래그
+      const stage = card.querySelector('[data-role="stage"]');
+      let dragging = false;
+      const setPos = (clientX) => {
+        const r = stage.getBoundingClientRect();
+        let p = ((clientX - r.left) / r.width) * 100;
+        p = Math.max(0, Math.min(100, p));
+        stage.style.setProperty('--pos', p + '%');
+      };
+      stage.addEventListener('pointerdown', (e) => {
+        if (job.status !== 'done') return;
+        dragging = true;
+        try { stage.setPointerCapture(e.pointerId); } catch (_) {}
+        setPos(e.clientX);
       });
+      stage.addEventListener('pointermove', (e) => { if (dragging) setPos(e.clientX); });
+      stage.addEventListener('pointerup', () => { dragging = false; });
+      stage.addEventListener('pointercancel', () => { dragging = false; });
 
       applyI18n();
       return card;
@@ -579,9 +635,8 @@
       const badge = card.querySelector('[data-role="badge"]');
       const overlay = card.querySelector('[data-role="overlay"]');
       const overlayText = card.querySelector('[data-role="overlay-text"]');
-      const imgEl = card.querySelector('[data-role="img"]');
-      const dl = card.querySelector('[data-role="download"]');
-      const toggle = card.querySelector('[data-role="toggle"]');
+      const handle = card.querySelector('[data-role="handle"]');
+      const labels = card.querySelector('[data-role="labels"]');
 
       const cls = {
         pending: 'bg-slate-700 text-slate-300',
@@ -599,16 +654,58 @@
         overlayText.textContent = msg || t('card_init');
       } else if (status === 'done') {
         overlay.classList.add('hidden');
-        imgEl.src = job.resultURL;
-        imgEl.classList.remove('hidden');
-        toggle.classList.remove('hidden');
-        dl.href = job.resultURL;
-        dl.setAttribute('download', job.name.replace(/\.[^.]+$/, '') + '-nukki.png');
-        dl.classList.remove('hidden'); dl.classList.add('flex');
+        handle.classList.remove('hidden');
+        labels.classList.remove('hidden');
+        updateCardResult(job);   // 결과 이미지 + 다운로드 링크 채움
       } else if (status === 'error') {
         overlay.classList.remove('hidden');
         overlay.querySelector('.spinner')?.classList.add('hidden');
         overlayText.innerHTML = '<span class="text-red-300">' + t('card_error') + '</span>';
+      }
+    }
+
+    // 결과 이미지 미리보기 + 다운로드 링크를 현재 배경 합성 결과(outURL)로 갱신
+    function updateCardResult(job) {
+      const card = document.getElementById('card-' + job.id);
+      if (!card || !job.outURL) return;
+      card.querySelector('[data-role="res"]').src = job.outURL;
+      const dl = card.querySelector('[data-role="download"]');
+      dl.href = job.outURL;
+      dl.setAttribute('download', job.name.replace(/\.[^.]+$/, '') + '-nukki.png');
+      dl.classList.remove('hidden'); dl.classList.add('flex');
+    }
+
+    // 투명 결과(resultBlob)를 현재 배경 설정에 맞게 합성 → outBlob/outURL 생성
+    async function composeResult(job) {
+      if (!job.resultBlob) return;
+      const revokeOld = () => { if (job.outURL && job.outURL !== job.resultURL) URL.revokeObjectURL(job.outURL); };
+      if (bgMode === 'transparent') {
+        revokeOld();
+        job.outBlob = job.resultBlob;
+        job.outURL = job.resultURL;
+        return;
+      }
+      const color = bgMode === 'white' ? '#ffffff' : bgColor;
+      const bmp = await createImageBitmap(job.resultBlob);
+      const c = document.createElement('canvas');
+      c.width = bmp.width; c.height = bmp.height;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = color;
+      ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(bmp, 0, 0);
+      bmp.close();
+      const blob = await new Promise(r => c.toBlob(r, 'image/png'));
+      revokeOld();
+      job.outBlob = blob;
+      job.outURL = URL.createObjectURL(blob);
+    }
+
+    // 배경 설정 변경 시 완료된 모든 결과를 다시 합성 + 미리보기/다운로드 갱신
+    async function applyBackground() {
+      const done = jobs.filter(j => j.status === 'done' && j.resultBlob);
+      for (const job of done) {
+        await composeResult(job);
+        updateCardResult(job);
       }
     }
 
@@ -618,6 +715,8 @@
       const failed = jobs.filter(j => j.status === 'error').length;
       const finished = done + failed;
       const adHint = document.getElementById('adHint');
+      const countLabel = document.getElementById('countLabel');
+      if (countLabel) countLabel.textContent = t('count_label', { n: total });
 
       if (total === 0) {
         overallTitle.textContent = t('over_preparing');
@@ -658,6 +757,7 @@
           job.resultBlob = blob;
           job.resultURL = URL.createObjectURL(blob);
           job.status = 'done';
+          await composeResult(job);   // 현재 배경 설정으로 합성
           setCardStatus(job, 'done');
         } catch (err) {
           console.error('처리 실패:', job.name, err);
@@ -680,10 +780,21 @@
         if (err) rejected.push(`${file.name}: ${t(err)}`);
         else accepted.push(file);
       }
-      if (rejected.length) showError(t('err_rejected', { list: rejected.join(' / ') }));
-      if (accepted.length === 0) { if (jobs.length === 0) showView('upload'); return; }
 
-      for (const file of accepted) {
+      // 한 번에 최대 MAX_FILES장 제한 (안정성)
+      const room = Math.max(0, MAX_FILES - jobs.length);
+      let toAdd = accepted;
+      let limited = false;
+      if (accepted.length > room) { toAdd = accepted.slice(0, room); limited = true; }
+
+      const msgs = [];
+      if (rejected.length) msgs.push(t('err_rejected', { list: rejected.join(' / ') }));
+      if (limited) msgs.push(t('err_limit', { max: MAX_FILES }));
+      if (msgs.length) showError(msgs.join(' '));
+
+      if (toAdd.length === 0) { if (jobs.length === 0) showView('upload'); return; }
+
+      for (const file of toAdd) {
         const job = { id: ++jobSeq, file, name: file.name || `image-${jobSeq}`, originalURL: URL.createObjectURL(file), resultURL: null, resultBlob: null, status: 'pending' };
         jobs.push(job);
         createCard(job);
@@ -695,7 +806,7 @@
     }
 
     downloadAllBtn.addEventListener('click', async () => {
-      const done = jobs.filter(j => j.status === 'done' && j.resultBlob);
+      const done = jobs.filter(j => j.status === 'done' && j.outBlob);
       if (done.length === 0) return;
       const original = downloadAllBtn.innerHTML;
       downloadAllBtn.disabled = true;
@@ -709,7 +820,7 @@
           let fname = base + '.png', n = 1;
           while (used[fname]) fname = `${base}(${n++}).png`;
           used[fname] = true;
-          zip.file(fname, job.resultBlob);
+          zip.file(fname, job.outBlob);
         }
         const content = await zip.generateAsync({ type: 'blob' });
         const url = URL.createObjectURL(content);
@@ -731,6 +842,7 @@
       for (const job of jobs) {
         if (job.originalURL) URL.revokeObjectURL(job.originalURL);
         if (job.resultURL) URL.revokeObjectURL(job.resultURL);
+        if (job.outURL && job.outURL !== job.resultURL) URL.revokeObjectURL(job.outURL);
       }
       jobs = [];
       cardsGrid.innerHTML = '';
@@ -757,6 +869,51 @@
     document.getElementById('langSwitch').addEventListener('click', (e) => {
       const btn = e.target.closest('[data-lang]');
       if (btn) setLang(btn.getAttribute('data-lang'), true);
+    });
+
+    // 클립보드 붙여넣기 (Ctrl+V)
+    window.addEventListener('paste', (e) => {
+      const items = e.clipboardData && e.clipboardData.items;
+      if (!items) return;
+      const files = [];
+      for (const it of items) {
+        if (it.type && it.type.startsWith('image/')) {
+          const f = it.getAsFile();
+          if (f) files.push(f);
+        }
+      }
+      if (files.length) { e.preventDefault(); addFiles(files); }
+    });
+
+    // 배경 교체 토글
+    const bgSwitch = document.getElementById('bgSwitch');
+    function setBgActive() {
+      bgSwitch.querySelectorAll('.bg-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-bg') === bgMode));
+      bgColorInput.classList.toggle('hidden', bgMode !== 'color');
+    }
+    bgSwitch.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-bg]');
+      if (!btn) return;
+      bgMode = btn.getAttribute('data-bg');
+      if (bgMode === 'color') bgColor = bgColorInput.value;
+      setBgActive();
+      applyBackground();
+    });
+    bgColorInput.addEventListener('input', () => {
+      bgColor = bgColorInput.value;
+      if (bgMode === 'color') applyBackground();
+    });
+    setBgActive();
+
+    // 결과 목록 접기/펼치기
+    let collapsed = false;
+    const collapseBtn = document.getElementById('collapseBtn');
+    const collapseLabel = document.getElementById('collapseLabel');
+    collapseBtn.addEventListener('click', () => {
+      collapsed = !collapsed;
+      cardsGrid.classList.toggle('hidden', collapsed);
+      collapseLabel.setAttribute('data-i18n', collapsed ? 'expand' : 'collapse');
+      collapseLabel.textContent = t(collapsed ? 'expand' : 'collapse');
     });
 
     /* ---------------- 초기화 ---------------- */
