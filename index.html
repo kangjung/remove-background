@@ -92,7 +92,7 @@
     ::-webkit-scrollbar-thumb:hover { background: #475569; }
     .spinner { border-top-color: #38bdf8; animation: spin 0.9s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .lang-btn.active, .bg-btn.active { background-color: #0ea5e9; color: #fff; }
+    .lang-btn.active, .bg-btn.active, .model-btn.active { background-color: #0ea5e9; color: #fff; }
     /* Before/After 비교 슬라이더 */
     .ba-stage { position: relative; overflow: hidden; touch-action: none; user-select: none; --pos: 50%; }
     .ba-clip-left { clip-path: inset(0 calc(100% - var(--pos)) 0 0); }
@@ -152,6 +152,16 @@
             <span class="inline-flex items-center gap-1.5"><i data-lucide="clipboard" class="w-3.5 h-3.5"></i> <span data-i18n="upload_paste">Ctrl+V로 붙여넣기 가능</span></span>
           </span>
         </div>
+      </div>
+
+      <!-- 처리 품질 선택 -->
+      <div class="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-xs">
+        <span data-i18n="quality_label" class="font-medium text-slate-400">처리 품질</span>
+        <div id="modelSwitch" class="flex items-center gap-0.5 bg-slate-800 border border-slate-700 rounded-lg p-0.5 font-medium">
+          <button data-model="isnet_fp16" class="model-btn px-3 py-1 rounded-md text-slate-300 hover:text-white transition" data-i18n="quality_fast">빠름</button>
+          <button data-model="isnet" class="model-btn px-3 py-1 rounded-md text-slate-300 hover:text-white transition" data-i18n="quality_best">고품질</button>
+        </div>
+        <span data-i18n="quality_hint" class="text-slate-500">고품질은 처음 한 번 모델을 더 받습니다</span>
       </div>
 
       <div id="errorBox" class="hidden mt-4 flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
@@ -333,6 +343,7 @@
         btn_download_all: "전체 ZIP 다운로드", btn_reset: "새 작업", btn_zipping: "ZIP 생성 중...",
         card_download: "PNG 다운로드", toggle_original: "원본", toggle_result: "결과",
         bg_label: "배경", bg_transparent: "투명", bg_white: "흰색", bg_color: "색상",
+        quality_label: "처리 품질", quality_fast: "빠름", quality_best: "고품질", quality_hint: "고품질은 처음 한 번 모델을 더 받습니다",
         ba_before: "원본", ba_after: "결과",
         err_limit: "한 번에 최대 {max}장까지 처리할 수 있습니다.",
         count_label: "이미지 {n}개", collapse: "접기", expand: "펼치기",
@@ -374,6 +385,7 @@
         btn_download_all: "Download all (ZIP)", btn_reset: "New task", btn_zipping: "Creating ZIP...",
         card_download: "Download PNG", toggle_original: "Original", toggle_result: "Result",
         bg_label: "Background", bg_transparent: "Transparent", bg_white: "White", bg_color: "Color",
+        quality_label: "Quality", quality_fast: "Fast", quality_best: "Best", quality_hint: "Best downloads a larger model the first time",
         ba_before: "Before", ba_after: "After",
         err_limit: "You can process up to {max} images at once.",
         count_label: "{n} image(s)", collapse: "Collapse", expand: "Expand",
@@ -415,6 +427,7 @@
         btn_download_all: "すべてZIPでダウンロード", btn_reset: "新規作業", btn_zipping: "ZIP作成中...",
         card_download: "PNGをダウンロード", toggle_original: "元画像", toggle_result: "結果",
         bg_label: "背景", bg_transparent: "透明", bg_white: "白", bg_color: "色",
+        quality_label: "処理品質", quality_fast: "高速", quality_best: "高品質", quality_hint: "高品質は初回のみ大きなモデルを取得します",
         ba_before: "元画像", ba_after: "結果",
         err_limit: "一度に最大{max}枚まで処理できます。",
         count_label: "画像 {n}枚", collapse: "折りたたむ", expand: "展開",
@@ -531,6 +544,10 @@
     const bgColorInput = document.getElementById('bgColorInput');
     let bgMode = 'transparent';        // 'transparent' | 'white' | 'color'
     let bgColor = bgColorInput.value;  // 'color' 모드에서 사용할 색
+
+    // 처리 품질(모델): 'isnet' = 고품질, 'isnet_fp16' = 빠름
+    let modelMode = localStorage.getItem('bgr_model');
+    if (modelMode !== 'isnet' && modelMode !== 'isnet_fp16') modelMode = 'isnet';
 
     let jobs = [];
     let jobSeq = 0;
@@ -748,6 +765,8 @@
         updateOverall();
         try {
           const blob = await removeBackground(job.file, {
+            model: modelMode,               // 'isnet'(고품질) / 'isnet_fp16'(빠름) — 업로드 화면에서 선택
+            output: { format: 'image/png' },
             progress: (key, current, total) => {
               const pct = total ? Math.round((current / total) * 100) : 0;
               const msg = (key && key.startsWith('fetch')) ? t('prog_model', { p: pct }) : t('prog_nukki', { p: pct });
@@ -904,6 +923,20 @@
       if (bgMode === 'color') applyBackground();
     });
     setBgActive();
+
+    // 처리 품질(모델) 선택
+    const modelSwitch = document.getElementById('modelSwitch');
+    function setModelActive() {
+      modelSwitch.querySelectorAll('.model-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-model') === modelMode));
+    }
+    modelSwitch.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-model]');
+      if (!btn) return;
+      modelMode = btn.getAttribute('data-model');
+      localStorage.setItem('bgr_model', modelMode);
+      setModelActive();
+    });
+    setModelActive();
 
     // 결과 목록 접기/펼치기
     let collapsed = false;
