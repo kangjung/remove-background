@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- ==================== SEO META ==================== -->
+  <title id="metaTitle">무료 배경 제거 · AI 누끼 따기 (서버 전송 없음) | Background Remover</title>
+  <meta id="metaDesc" name="description" content="이미지를 끌어다 놓으면 브라우저 안에서 AI가 배경을 제거해 투명 PNG로 저장합니다. 여러 장 동시 처리, 100% 무료, 서버 업로드 없이 안전한 누끼 도구." />
+  <meta name="keywords" content="배경 제거, 누끼, 누끼 따기, 투명 PNG, 이미지 배경 지우기, 무료 배경 제거, background remover, remove background, transparent PNG, free background removal, AI background remover, 背景透過, 背景削除, 切り抜き, 透過PNG, 画像 背景 透明" />
+  <meta name="robots" content="index, follow" />
+  <meta name="author" content="Client-Side Background Remover" />
+  <meta name="theme-color" content="#0f172a" />
+  <link id="canonicalLink" rel="canonical" href="" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta id="ogTitle" property="og:title" content="무료 AI 배경 제거 · 누끼 따기 도구" />
+  <meta id="ogDesc" property="og:description" content="브라우저에서 바로 배경을 제거하고 투명 PNG로 저장하세요. 여러 장 동시 처리, 100% 무료, 서버 업로드 없음." />
+  <meta property="og:image" content="og-image.png" />
+  <meta id="ogUrl" property="og:url" content="" />
+  <meta id="ogLocale" property="og:locale" content="ko_KR" />
+  <meta property="og:locale:alternate" content="en_US" />
+  <meta property="og:locale:alternate" content="ja_JP" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta id="twTitle" name="twitter:title" content="무료 AI 배경 제거 · 누끼 따기 도구" />
+  <meta id="twDesc" name="twitter:description" content="브라우저에서 바로 배경을 제거하고 투명 PNG로 저장하세요. 100% 무료, 서버 업로드 없음." />
+  <meta name="twitter:image" content="og-image.png" />
+
+  <!-- hreflang (다국어) : JS가 현재 도메인 기준으로 채워 넣습니다 -->
+  <link id="hreflangKo" rel="alternate" hreflang="ko" href="" />
+  <link id="hreflangEn" rel="alternate" hreflang="en" href="" />
+  <link id="hreflangJa" rel="alternate" hreflang="ja" href="" />
+  <link id="hreflangX" rel="alternate" hreflang="x-default" href="" />
+
+  <!-- 구조화 데이터 (JSON-LD) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Client-Side Background Remover",
+    "alternateName": ["오프라인 배경 제거기", "AI 누끼 따기", "AI Background Remover", "背景透過ツール"],
+    "applicationCategory": "MultimediaApplication",
+    "operatingSystem": "Any (Web Browser)",
+    "browserRequirements": "Requires a modern browser with WebAssembly support",
+    "description": "Remove image backgrounds for free, entirely in your browser. No upload, no server, privacy-friendly. Batch processing and transparent PNG download.",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "featureList": ["AI background removal", "Batch processing", "Transparent PNG export", "100% client-side / private", "No sign-up"]
+  }
+  </script>
+
+  <!-- Tailwind CSS (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons (CDN) -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <!-- JSZip (전체 다운로드 ZIP 생성용) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <!-- Google AdSense 로더 (페이지당 1회만) -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2007216448786117" crossorigin="anonymous"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Pretendard', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'] },
+          keyframes: {
+            'fade-in': { '0%': { opacity: '0', transform: 'translateY(8px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+            'pulse-ring': { '0%': { transform: 'scale(0.95)', opacity: '0.7' }, '70%': { transform: 'scale(1.1)', opacity: '0' }, '100%': { transform: 'scale(1.1)', opacity: '0' } },
+          },
+          animation: { 'fade-in': 'fade-in 0.4s ease-out both', 'pulse-ring': 'pulse-ring 1.8s cubic-bezier(0.215, 0.61, 0.355, 1) infinite' },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    .checkerboard {
+      background-color: #fff;
+      background-image:
+        linear-gradient(45deg, #cbd5e1 25%, transparent 25%),
+        linear-gradient(-45deg, #cbd5e1 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #cbd5e1 75%),
+        linear-gradient(-45deg, transparent 75%, #cbd5e1 75%);
+      background-size: 22px 22px;
+      background-position: 0 0, 0 11px, 11px -11px, -11px 0px;
+    }
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 6px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    .spinner { border-top-color: #38bdf8; animation: spin 0.9s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .lang-btn.active { background-color: #0ea5e9; color: #fff; }
+  </style>
+</head>
+
+<body class="bg-slate-900 text-slate-200 antialiased min-h-screen flex flex-col selection:bg-sky-500/30">
+
+  <!-- ============================ HEADER ============================ -->
+  <header class="border-b border-slate-800/80 bg-slate-900/70 backdrop-blur sticky top-0 z-30">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/20 shrink-0">
+        <i data-lucide="scissors" class="w-5 h-5 text-white"></i>
+      </div>
+      <div class="min-w-0">
+        <h1 data-i18n="header_title" class="text-lg sm:text-xl font-bold text-white tracking-tight truncate">오프라인 배경 제거기</h1>
+        <p data-i18n="header_subtitle" class="text-xs sm:text-sm text-slate-400 truncate">서버로 전송되지 않는 안전한 오프라인 AI 누끼 제거 도구</p>
+      </div>
+
+      <!-- 언어 전환 -->
+      <div id="langSwitch" class="ml-auto flex items-center gap-0.5 bg-slate-800 border border-slate-700 rounded-lg p-0.5 text-xs font-medium shrink-0">
+        <button data-lang="ko" class="lang-btn px-2 py-1 rounded-md text-slate-300 hover:text-white transition">한국어</button>
+        <button data-lang="en" class="lang-btn px-2 py-1 rounded-md text-slate-300 hover:text-white transition">EN</button>
+        <button data-lang="ja" class="lang-btn px-2 py-1 rounded-md text-slate-300 hover:text-white transition">日本語</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+
+    <!-- ============ 구글 애드센스 광고 영역 (상단/가로형) — 디스플레이 1 ============ -->
+    <section aria-label="ad" class="mb-6 sm:mb-8 min-h-[90px]">
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="ca-pub-2007216448786117"
+           data-ad-slot="8578607402"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </section>
+
+    <!-- ==================== UPLOAD ZONE ==================== -->
+    <section id="uploadView" class="animate-fade-in">
+      <div id="dropZone" class="group relative rounded-2xl border-2 border-dashed border-slate-700 bg-slate-800/30 hover:border-sky-500/60 transition-all duration-300 cursor-pointer px-6 py-14 sm:py-20 text-center">
+        <input id="fileInput" type="file" accept="image/png,image/jpeg,image/webp" multiple class="hidden" />
+        <div class="flex flex-col items-center gap-4 pointer-events-none">
+          <div class="w-16 h-16 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center group-hover:scale-110 group-hover:border-sky-500/50 transition-transform duration-300">
+            <i data-lucide="image-up" class="w-8 h-8 text-sky-400"></i>
+          </div>
+          <div>
+            <p data-i18n="upload_title" class="text-base sm:text-lg font-semibold text-white">이미지를 끌어다 놓거나 클릭하여 선택</p>
+            <p data-i18n="upload_sub" class="text-sm text-slate-400 mt-1">여러 장 동시 업로드 가능 · PNG · JPG · JPEG · WEBP (권장 장당 ~15MB)</p>
+          </div>
+          <span class="inline-flex items-center gap-2 text-xs text-slate-500 mt-1">
+            <i data-lucide="lock" class="w-3.5 h-3.5"></i> <span data-i18n="upload_privacy">파일은 서버로 전송되지 않습니다</span>
+          </span>
+        </div>
+      </div>
+
+      <div id="errorBox" class="hidden mt-4 flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+        <i data-lucide="alert-triangle" class="w-5 h-5 shrink-0 mt-0.5"></i>
+        <span id="errorText"></span>
+      </div>
+    </section>
+
+    <!-- ==================== WORKSPACE ==================== -->
+    <section id="workspaceView" class="hidden animate-fade-in">
+      <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="relative inline-flex items-center justify-center shrink-0">
+            <span id="overallSpinnerRing" class="absolute inline-flex h-9 w-9 rounded-full bg-sky-500/30 animate-pulse-ring"></span>
+            <div id="overallSpinner" class="spinner w-9 h-9 rounded-full border-[3px] border-slate-700"></div>
+            <i id="overallDone" data-lucide="check-circle-2" class="hidden w-9 h-9 text-emerald-400"></i>
+          </div>
+          <div class="min-w-0">
+            <p id="overallTitle" class="text-sm font-semibold text-white truncate">처리 준비 중...</p>
+            <p id="overallSub" class="text-xs text-slate-400 truncate">잠시만 기다려 주세요.</p>
+          </div>
+        </div>
+
+        <div class="sm:ml-auto flex items-center gap-2">
+          <button id="downloadAllBtn" disabled class="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-sky-500/20 hover:shadow-sky-500/40 hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-40 disabled:pointer-events-none">
+            <i data-lucide="folder-down" class="w-4 h-4"></i> <span data-i18n="btn_download_all">전체 ZIP 다운로드</span>
+          </button>
+          <button id="resetBtn" class="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-600 bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-200 hover:bg-slate-700 hover:border-slate-500 transition-all duration-200">
+            <i data-lucide="rotate-ccw" class="w-4 h-4"></i> <span data-i18n="btn_reset">새 작업</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ============ 구글 애드센스 광고 영역 (변환 중/작업 영역) — 디스플레이 2 ============ -->
+      <!-- 처음엔 숨겨진 영역이라 화면이 보일 때 JS(showView)에서 push() 합니다. -->
+      <section aria-label="ad" class="mb-5 min-h-[100px]">
+        <ins id="workAd" class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-2007216448786117"
+             data-ad-slot="5972583809"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+        <p id="adHint" data-i18n="ad_hint_wait" class="text-xs text-slate-500 mt-2 text-center">변환을 기다리는 동안 잠시 광고가 표시됩니다.</p>
+      </section>
+
+      <div id="cardsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5"></div>
+    </section>
+
+    <!-- ============ 구글 애드센스 광고 영역 (하단/가로형) — 디스플레이 3 ============ -->
+    <section aria-label="ad" class="mt-8 min-h-[90px]">
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="ca-pub-2007216448786117"
+           data-ad-slot="7094093780"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </section>
+
+    <!-- 특징 카드 -->
+    <section class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="rounded-xl border border-slate-800 bg-slate-800/30 p-4">
+        <i data-lucide="cpu" class="w-5 h-5 text-sky-400 mb-2"></i>
+        <h3 data-i18n="info1_title" class="text-sm font-semibold text-white">기기 내 AI 연산</h3>
+        <p data-i18n="info1_desc" class="text-xs text-slate-400 mt-1">WebAssembly 기반으로 브라우저에서 직접 처리됩니다.</p>
+      </div>
+      <div class="rounded-xl border border-slate-800 bg-slate-800/30 p-4">
+        <i data-lucide="shield" class="w-5 h-5 text-emerald-400 mb-2"></i>
+        <h3 data-i18n="info2_title" class="text-sm font-semibold text-white">완벽한 프라이버시</h3>
+        <p data-i18n="info2_desc" class="text-xs text-slate-400 mt-1">이미지가 외부 서버로 업로드되지 않습니다.</p>
+      </div>
+      <div class="rounded-xl border border-slate-800 bg-slate-800/30 p-4">
+        <i data-lucide="zap" class="w-5 h-5 text-amber-400 mb-2"></i>
+        <h3 data-i18n="info3_title" class="text-sm font-semibold text-white">무료 · 무제한</h3>
+        <p data-i18n="info3_desc" class="text-xs text-slate-400 mt-1">설치 없이 여러 장을 한 번에 처리할 수 있습니다.</p>
+      </div>
+    </section>
+
+    <!-- ==================== SEO 콘텐츠 (소개/사용법/FAQ) ==================== -->
+    <article class="mt-12 prose-invert max-w-none space-y-10">
+      <section>
+        <h2 data-i18n="seo_title" class="text-xl font-bold text-white mb-3">브라우저에서 바로 쓰는 무료 배경 제거(누끼) 도구</h2>
+        <p data-i18n="seo_body" class="text-sm text-slate-400 leading-relaxed">이 도구는 사진의 배경을 AI로 자동 제거해 투명 PNG로 저장해 주는 무료 웹 앱입니다. 모든 처리는 사용자의 브라우저 안에서 이루어지므로 이미지가 서버로 전송되지 않아 안전하며, 회원가입이나 설치도 필요 없습니다. 인물 사진, 상품 누끼, 프로필 이미지, 로고 등 다양한 이미지의 배경을 한 번에 여러 장 제거할 수 있습니다.</p>
+      </section>
+
+      <section>
+        <h2 data-i18n="how_title" class="text-lg font-bold text-white mb-4">사용 방법</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="rounded-xl border border-slate-800 bg-slate-800/30 p-4">
+            <div class="text-sky-400 font-bold text-sm mb-1">1</div>
+            <p data-i18n="how_1" class="text-sm text-slate-300">이미지를 끌어다 놓거나 클릭해서 업로드합니다. 여러 장을 한 번에 선택할 수 있습니다.</p>
+          </div>
+          <div class="rounded-xl border border-slate-800 bg-slate-800/30 p-4">
+            <div class="text-sky-400 font-bold text-sm mb-1">2</div>
+            <p data-i18n="how_2" class="text-sm text-slate-300">AI가 자동으로 배경을 분석하고 제거합니다. 잠시만 기다려 주세요.</p>
+          </div>
+          <div class="rounded-xl border border-slate-800 bg-slate-800/30 p-4">
+            <div class="text-sky-400 font-bold text-sm mb-1">3</div>
+            <p data-i18n="how_3" class="text-sm text-slate-300">투명 PNG로 개별 저장하거나, 전체를 ZIP으로 한 번에 내려받습니다.</p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2 data-i18n="faq_title" class="text-lg font-bold text-white mb-4">자주 묻는 질문 (FAQ)</h2>
+        <div class="space-y-3">
+          <details class="rounded-xl border border-slate-800 bg-slate-800/30 p-4">
+            <summary data-i18n="faq_q1" class="text-sm font-semibold text-white cursor-pointer">정말 무료인가요?</summary>
+            <p data-i18n="faq_a1" class="text-sm text-slate-400 mt-2">네, 완전히 무료이며 처리 횟수 제한도 없습니다.</p>
+          </details>
+          <details class="rounded-xl border border-slate-800 bg-slate-800/30 p-4">
+            <summary data-i18n="faq_q2" class="text-sm font-semibold text-white cursor-pointer">제 사진이 서버에 업로드되나요?</summary>
+            <p data-i18n="faq_a2" class="text-sm text-slate-400 mt-2">아니요. 모든 처리는 브라우저 안에서 이루어지며 이미지는 외부로 전송되지 않습니다.</p>
+          </details>
+          <details class="rounded-xl border border-slate-800 bg-slate-800/30 p-4">
+            <summary data-i18n="faq_q3" class="text-sm font-semibold text-white cursor-pointer">어떤 파일 형식을 지원하나요?</summary>
+            <p data-i18n="faq_a3" class="text-sm text-slate-400 mt-2">PNG, JPG, JPEG, WEBP를 지원하며 결과물은 투명 배경 PNG로 저장됩니다.</p>
+          </details>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <!-- ============================ FOOTER ============================ -->
+  <footer class="border-t border-slate-800/80 mt-8">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-6 text-center text-xs text-slate-500">
+      <p class="flex items-center justify-center gap-1.5">
+        <i data-lucide="globe" class="w-3.5 h-3.5"></i>
+        <span data-i18n="footer_line">100% Client-Side Web App — 모든 연산은 사용자의 브라우저에서 이루어집니다.</span>
+      </p>
+      <p data-i18n="footer_copy" class="mt-2">© 2026 Client-Side Background Remover. Powered by @imgly/background-removal (WASM).</p>
+    </div>
+  </footer>
+
+  <!-- ==================== CORE LOGIC ==================== -->
+  <script type="module">
+    import { removeBackground } from 'https://esm.sh/@imgly/background-removal@1.7.0';
+
+    /* ---------------- i18n 사전 ---------------- */
+    const I18N = {
+      ko: {
+        meta_title: "무료 배경 제거 · AI 누끼 따기 (서버 전송 없음) | Background Remover",
+        meta_desc: "이미지를 끌어다 놓으면 브라우저 안에서 AI가 배경을 제거해 투명 PNG로 저장합니다. 여러 장 동시 처리, 100% 무료, 서버 업로드 없이 안전한 누끼 도구.",
+        og_title: "무료 AI 배경 제거 · 누끼 따기 도구",
+        og_desc: "브라우저에서 바로 배경을 제거하고 투명 PNG로 저장하세요. 여러 장 동시 처리, 100% 무료, 서버 업로드 없음.",
+        header_title: "오프라인 배경 제거기",
+        header_subtitle: "서버로 전송되지 않는 안전한 오프라인 AI 누끼 제거 도구",
+        upload_title: "이미지를 끌어다 놓거나 클릭하여 선택",
+        upload_sub: "여러 장 동시 업로드 가능 · PNG · JPG · JPEG · WEBP (권장 장당 ~15MB)",
+        upload_privacy: "파일은 서버로 전송되지 않습니다",
+        btn_download_all: "전체 ZIP 다운로드", btn_reset: "새 작업", btn_zipping: "ZIP 생성 중...",
+        card_download: "PNG 다운로드", toggle_original: "원본", toggle_result: "결과",
+        badge_pending: "대기", badge_processing: "처리 중", badge_done: "완료", badge_error: "실패",
+        card_init: "AI 모델 로딩 중...", card_error: "처리 실패 — 다시 시도해 주세요",
+        prog_model: "모델 로딩 {p}%", prog_nukki: "누끼 작업 {p}%",
+        over_preparing: "처리 준비 중...", over_preparing_sub: "잠시만 기다려 주세요.",
+        over_processing: "처리 중... ({finished}/{total})", over_processing_sub: "이미지를 분석하여 배경을 분리하고 있습니다.",
+        over_done: "완료! (성공 {done} / 실패 {failed})", over_done_sub_ok: "모든 이미지의 배경을 제거했습니다.", over_done_sub_fail: "일부 이미지는 처리에 실패했습니다.",
+        ad_hint_wait: "변환을 기다리는 동안 잠시 광고가 표시됩니다.", ad_hint_done: "광고를 통해 이 도구를 무료로 운영하고 있습니다. 감사합니다 🙏",
+        err_not_image: "이미지 파일이 아닙니다", err_format: "지원하지 않는 형식 (PNG·JPG·JPEG·WEBP만 가능)", err_size: "용량 초과 (약 15MB 이하 권장)",
+        err_rejected: "다음 파일은 제외되었습니다 — {list}", alert_zip_fail: "ZIP 생성에 실패했습니다.",
+        info1_title: "기기 내 AI 연산", info1_desc: "WebAssembly 기반으로 브라우저에서 직접 처리됩니다.",
+        info2_title: "완벽한 프라이버시", info2_desc: "이미지가 외부 서버로 업로드되지 않습니다.",
+        info3_title: "무료 · 무제한", info3_desc: "설치 없이 여러 장을 한 번에 처리할 수 있습니다.",
+        footer_line: "100% Client-Side Web App — 모든 연산은 사용자의 브라우저에서 이루어집니다.",
+        footer_copy: "© 2026 Client-Side Background Remover. Powered by @imgly/background-removal (WASM).",
+        seo_title: "브라우저에서 바로 쓰는 무료 배경 제거(누끼) 도구",
+        seo_body: "이 도구는 사진의 배경을 AI로 자동 제거해 투명 PNG로 저장해 주는 무료 웹 앱입니다. 모든 처리는 사용자의 브라우저 안에서 이루어지므로 이미지가 서버로 전송되지 않아 안전하며, 회원가입이나 설치도 필요 없습니다. 인물 사진, 상품 누끼, 프로필 이미지, 로고 등 다양한 이미지의 배경을 한 번에 여러 장 제거할 수 있습니다.",
+        how_title: "사용 방법",
+        how_1: "이미지를 끌어다 놓거나 클릭해서 업로드합니다. 여러 장을 한 번에 선택할 수 있습니다.",
+        how_2: "AI가 자동으로 배경을 분석하고 제거합니다. 잠시만 기다려 주세요.",
+        how_3: "투명 PNG로 개별 저장하거나, 전체를 ZIP으로 한 번에 내려받습니다.",
+        faq_title: "자주 묻는 질문 (FAQ)",
+        faq_q1: "정말 무료인가요?", faq_a1: "네, 완전히 무료이며 처리 횟수 제한도 없습니다.",
+        faq_q2: "제 사진이 서버에 업로드되나요?", faq_a2: "아니요. 모든 처리는 브라우저 안에서 이루어지며 이미지는 외부로 전송되지 않습니다.",
+        faq_q3: "어떤 파일 형식을 지원하나요?", faq_a3: "PNG, JPG, JPEG, WEBP를 지원하며 결과물은 투명 배경 PNG로 저장됩니다.",
+      },
+      en: {
+        meta_title: "Free Background Remover · AI Cutout, No Upload | Online Tool",
+        meta_desc: "Drag & drop an image and AI removes the background right in your browser, saving a transparent PNG. Batch processing, 100% free, no server upload — privacy-friendly.",
+        og_title: "Free AI Background Remover — Transparent PNG",
+        og_desc: "Remove image backgrounds instantly in your browser and download transparent PNGs. Batch processing, 100% free, no upload.",
+        header_title: "Offline Background Remover",
+        header_subtitle: "A safe, offline AI background removal tool — nothing is sent to a server",
+        upload_title: "Drag & drop images, or click to select",
+        upload_sub: "Multiple files supported · PNG · JPG · JPEG · WEBP (up to ~15MB each)",
+        upload_privacy: "Files are never sent to a server",
+        btn_download_all: "Download all (ZIP)", btn_reset: "New task", btn_zipping: "Creating ZIP...",
+        card_download: "Download PNG", toggle_original: "Original", toggle_result: "Result",
+        badge_pending: "Queued", badge_processing: "Processing", badge_done: "Done", badge_error: "Failed",
+        card_init: "Loading AI model...", card_error: "Failed — please try again",
+        prog_model: "Loading model {p}%", prog_nukki: "Removing background {p}%",
+        over_preparing: "Preparing...", over_preparing_sub: "Please wait a moment.",
+        over_processing: "Processing... ({finished}/{total})", over_processing_sub: "Analyzing images and separating the background.",
+        over_done: "Done! ({done} ok / {failed} failed)", over_done_sub_ok: "All backgrounds have been removed.", over_done_sub_fail: "Some images could not be processed.",
+        ad_hint_wait: "An ad is shown while you wait for processing.", ad_hint_done: "Ads keep this tool free to use. Thank you 🙏",
+        err_not_image: "Not an image file", err_format: "Unsupported format (PNG·JPG·JPEG·WEBP only)", err_size: "Too large (≈15MB max recommended)",
+        err_rejected: "These files were skipped — {list}", alert_zip_fail: "Failed to create ZIP.",
+        info1_title: "On-device AI", info1_desc: "Runs directly in your browser via WebAssembly.",
+        info2_title: "Full privacy", info2_desc: "Your images are never uploaded to any server.",
+        info3_title: "Free & unlimited", info3_desc: "Process many images at once, no install required.",
+        footer_line: "100% client-side web app — all computation happens in your browser.",
+        footer_copy: "© 2026 Client-Side Background Remover. Powered by @imgly/background-removal (WASM).",
+        seo_title: "Free background remover that runs right in your browser",
+        seo_body: "This free web app automatically removes image backgrounds with AI and saves them as transparent PNGs. All processing happens inside your browser, so your images are never sent to a server — no sign-up, no install. Remove backgrounds from portraits, product photos, profile pictures, logos and more, many at once.",
+        how_title: "How to use",
+        how_1: "Drag & drop or click to upload your images. You can select several at once.",
+        how_2: "AI automatically analyzes and removes the background. Just wait a moment.",
+        how_3: "Save each transparent PNG individually, or download them all as a ZIP.",
+        faq_title: "Frequently Asked Questions (FAQ)",
+        faq_q1: "Is it really free?", faq_a1: "Yes, it is completely free with no usage limits.",
+        faq_q2: "Are my photos uploaded to a server?", faq_a2: "No. All processing happens in your browser and images are never sent anywhere.",
+        faq_q3: "Which file formats are supported?", faq_a3: "PNG, JPG, JPEG and WEBP. Results are saved as transparent PNGs.",
+      },
+      ja: {
+        meta_title: "無料 背景透過・AI切り抜き（アップロード不要）| オンラインツール",
+        meta_desc: "画像をドラッグ＆ドロップするだけで、ブラウザ内のAIが背景を削除し透過PNGとして保存します。複数枚同時処理、完全無料、サーバー送信なしで安心。",
+        og_title: "無料AI背景透過・切り抜きツール",
+        og_desc: "ブラウザ内ですぐに背景を削除し、透過PNGで保存。複数枚同時処理、完全無料、アップロード不要。",
+        header_title: "オフライン背景透過ツール",
+        header_subtitle: "サーバーに送信しない、安全なオフラインAI背景削除ツール",
+        upload_title: "画像をドラッグ＆ドロップ、またはクリックして選択",
+        upload_sub: "複数枚同時アップロード可 · PNG · JPG · JPEG · WEBP（1枚あたり〜15MB推奨）",
+        upload_privacy: "ファイルはサーバーに送信されません",
+        btn_download_all: "すべてZIPでダウンロード", btn_reset: "新規作業", btn_zipping: "ZIP作成中...",
+        card_download: "PNGをダウンロード", toggle_original: "元画像", toggle_result: "結果",
+        badge_pending: "待機", badge_processing: "処理中", badge_done: "完了", badge_error: "失敗",
+        card_init: "AIモデル読み込み中...", card_error: "処理に失敗しました — もう一度お試しください",
+        prog_model: "モデル読み込み {p}%", prog_nukki: "背景削除 {p}%",
+        over_preparing: "準備中...", over_preparing_sub: "少々お待ちください。",
+        over_processing: "処理中... ({finished}/{total})", over_processing_sub: "画像を解析して背景を分離しています。",
+        over_done: "完了！（成功 {done} / 失敗 {failed}）", over_done_sub_ok: "すべての画像の背景を削除しました。", over_done_sub_fail: "一部の画像は処理に失敗しました。",
+        ad_hint_wait: "変換をお待ちの間、広告が表示されます。", ad_hint_done: "広告のおかげでこのツールを無料で提供しています。ありがとうございます 🙏",
+        err_not_image: "画像ファイルではありません", err_format: "対応していない形式（PNG·JPG·JPEG·WEBPのみ）", err_size: "サイズ超過（約15MB以下を推奨）",
+        err_rejected: "次のファイルは除外されました — {list}", alert_zip_fail: "ZIPの作成に失敗しました。",
+        info1_title: "端末内AI処理", info1_desc: "WebAssemblyによりブラウザ内で直接処理します。",
+        info2_title: "完全なプライバシー", info2_desc: "画像が外部サーバーにアップロードされることはありません。",
+        info3_title: "無料・無制限", info3_desc: "インストール不要で複数枚を一度に処理できます。",
+        footer_line: "100%クライアントサイドWebアプリ — すべての処理はブラウザ内で行われます。",
+        footer_copy: "© 2026 Client-Side Background Remover. Powered by @imgly/background-removal (WASM).",
+        seo_title: "ブラウザですぐ使える無料の背景透過（切り抜き）ツール",
+        seo_body: "このツールは、写真の背景をAIで自動的に削除し、透過PNGとして保存できる無料のWebアプリです。すべての処理はブラウザ内で行われるため画像がサーバーに送信されず安全で、登録やインストールも不要です。人物写真、商品の切り抜き、プロフィール画像、ロゴなど、さまざまな画像の背景を複数枚まとめて削除できます。",
+        how_title: "使い方",
+        how_1: "画像をドラッグ＆ドロップ、またはクリックしてアップロードします。複数枚同時に選択できます。",
+        how_2: "AIが自動的に背景を解析して削除します。少々お待ちください。",
+        how_3: "透過PNGとして個別に保存するか、すべてをZIPでまとめてダウンロードします。",
+        faq_title: "よくある質問（FAQ）",
+        faq_q1: "本当に無料ですか？", faq_a1: "はい、完全に無料で利用回数の制限もありません。",
+        faq_q2: "写真はサーバーにアップロードされますか？", faq_a2: "いいえ。すべての処理はブラウザ内で行われ、画像が外部に送信されることはありません。",
+        faq_q3: "対応しているファイル形式は？", faq_a3: "PNG、JPG、JPEG、WEBPに対応し、結果は透過PNGとして保存されます。",
+      },
+    };
+    const OG_LOCALE = { ko: 'ko_KR', en: 'en_US', ja: 'ja_JP' };
+
+    let LANG = 'ko';
+    function t(key, vars) {
+      let s = (I18N[LANG] && I18N[LANG][key]) || I18N.ko[key] || key;
+      if (vars) for (const k in vars) s = s.split('{' + k + '}').join(vars[k]);
+      return s;
+    }
+    function applyI18n() {
+      document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.getAttribute('data-i18n')); });
+    }
+
+    /* ---------------- 언어 결정 / hreflang / 메타 ---------------- */
+    function detectLang() {
+      const url = new URLSearchParams(location.search).get('lang');
+      if (url && I18N[url]) return url;
+      const saved = localStorage.getItem('bgr_lang');
+      if (saved && I18N[saved]) return saved;
+      const nav = (navigator.language || 'en').toLowerCase();
+      if (nav.startsWith('ko')) return 'ko';
+      if (nav.startsWith('ja')) return 'ja';
+      return 'en';
+    }
+    function setupHreflang() {
+      const base = location.origin + location.pathname;
+      document.getElementById('hreflangKo').href = base + '?lang=ko';
+      document.getElementById('hreflangEn').href = base + '?lang=en';
+      document.getElementById('hreflangJa').href = base + '?lang=ja';
+      document.getElementById('hreflangX').href = base;
+    }
+    function setLang(lang, pushUrl) {
+      LANG = lang;
+      document.documentElement.lang = lang;
+      localStorage.setItem('bgr_lang', lang);
+
+      // 메타 갱신
+      document.title = t('meta_title');
+      document.getElementById('metaTitle').textContent = t('meta_title');
+      document.getElementById('metaDesc').setAttribute('content', t('meta_desc'));
+      document.getElementById('ogTitle').setAttribute('content', t('og_title'));
+      document.getElementById('ogDesc').setAttribute('content', t('og_desc'));
+      document.getElementById('twTitle').setAttribute('content', t('og_title'));
+      document.getElementById('twDesc').setAttribute('content', t('og_desc'));
+      document.getElementById('ogLocale').setAttribute('content', OG_LOCALE[lang] || 'en_US');
+      const base = location.origin + location.pathname;
+      document.getElementById('canonicalLink').href = base + '?lang=' + lang;
+      document.getElementById('ogUrl').setAttribute('content', base + '?lang=' + lang);
+
+      // URL 갱신 (히스토리 더럽히지 않게 replace)
+      if (pushUrl) {
+        const u = new URL(location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u);
+      }
+
+      // 활성 버튼 스타일
+      document.querySelectorAll('#langSwitch .lang-btn').forEach(b => {
+        b.classList.toggle('active', b.getAttribute('data-lang') === lang);
+      });
+
+      // 카드 토글 라벨(data-i18n) 동기화 후 일괄 번역
+      document.querySelectorAll('[data-role="toggle-label"]').forEach(el => {
+        const showingResult = el.getAttribute('data-state') !== 'original';
+        el.setAttribute('data-i18n', showingResult ? 'toggle_original' : 'toggle_result');
+      });
+
+      applyI18n();
+      if (jobs.length) updateOverall();
+    }
+
+    /* ---------------- 앱 로직 ---------------- */
+    const dropZone       = document.getElementById('dropZone');
+    const fileInput      = document.getElementById('fileInput');
+    const uploadView     = document.getElementById('uploadView');
+    const workspaceView  = document.getElementById('workspaceView');
+    const errorBox       = document.getElementById('errorBox');
+    const errorText      = document.getElementById('errorText');
+    const cardsGrid      = document.getElementById('cardsGrid');
+    const overallSpinner     = document.getElementById('overallSpinner');
+    const overallSpinnerRing = document.getElementById('overallSpinnerRing');
+    const overallDone        = document.getElementById('overallDone');
+    const overallTitle       = document.getElementById('overallTitle');
+    const overallSub         = document.getElementById('overallSub');
+    const downloadAllBtn = document.getElementById('downloadAllBtn');
+    const resetBtn       = document.getElementById('resetBtn');
+
+    const ACCEPTED = ['image/png', 'image/jpeg', 'image/webp'];
+    const MAX_BYTES = 15 * 1024 * 1024;
+
+    let jobs = [];
+    let jobSeq = 0;
+    let isRunning = false;
+
+    let workspaceAdPushed = false;
+    function showView(view) {
+      uploadView.classList.toggle('hidden', view !== 'upload');
+      workspaceView.classList.toggle('hidden', view !== 'workspace');
+      // 작업영역 광고는 화면이 실제로 보일 때 1회만 로드 (숨김 상태 push 시 오류 방지)
+      if (view === 'workspace' && !workspaceAdPushed) {
+        workspaceAdPushed = true;
+        try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) { console.warn('adsense', e); }
+      }
+    }
+    function showError(msg) { errorText.textContent = msg; errorBox.classList.remove('hidden'); }
+    function clearError() { errorBox.classList.add('hidden'); }
+
+    function validateFile(file) {
+      if (!file || !file.type || !file.type.startsWith('image/')) return 'err_not_image';
+      if (!ACCEPTED.includes(file.type)) return 'err_format';
+      if (file.size > MAX_BYTES) return 'err_size';
+      return null;
+    }
+
+    function createCard(job) {
+      const card = document.createElement('div');
+      card.id = 'card-' + job.id;
+      card.className = 'rounded-2xl border border-slate-700 bg-slate-800/40 overflow-hidden flex flex-col';
+      card.innerHTML = `
+        <div class="px-3 py-2.5 border-b border-slate-700/80 flex items-center gap-2">
+          <i data-lucide="image" class="w-4 h-4 text-slate-400 shrink-0"></i>
+          <span class="text-xs font-medium text-slate-300 truncate flex-1" title="${job.name}">${job.name}</span>
+          <span data-role="badge" data-i18n="badge_pending" class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-700 text-slate-300"></span>
+        </div>
+        <div data-role="stage" class="relative aspect-square flex items-center justify-center checkerboard">
+          <img data-role="img" alt="${job.name}" class="max-w-full max-h-full object-contain hidden" />
+          <div data-role="overlay" class="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-900/60 text-center px-3">
+            <div class="spinner w-9 h-9 rounded-full border-[3px] border-slate-700"></div>
+            <p data-role="overlay-text" class="text-xs text-slate-300"></p>
+          </div>
+          <button data-role="toggle" type="button" class="hidden absolute top-2 right-2 inline-flex items-center gap-1 text-[11px] font-medium bg-slate-900/80 hover:bg-slate-900 border border-slate-600 text-slate-200 px-2 py-1 rounded-lg transition">
+            <i data-lucide="repeat" class="w-3 h-3"></i> <span data-role="toggle-label" data-state="result" data-i18n="toggle_original"></span>
+          </button>
+        </div>
+        <div class="p-3">
+          <a data-role="download" href="#" download class="hidden items-center justify-center gap-1.5 w-full rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-100 text-sm font-medium px-3 py-2 transition">
+            <i data-lucide="download" class="w-4 h-4"></i> <span data-i18n="card_download"></span>
+          </a>
+        </div>
+      `;
+      cardsGrid.appendChild(card);
+      lucide.createIcons({ nodes: [card] });
+
+      let showingResult = true;
+      const imgEl = card.querySelector('[data-role="img"]');
+      const stageEl = card.querySelector('[data-role="stage"]');
+      const toggleBtn = card.querySelector('[data-role="toggle"]');
+      const toggleLabel = card.querySelector('[data-role="toggle-label"]');
+      toggleBtn.addEventListener('click', () => {
+        showingResult = !showingResult;
+        imgEl.src = showingResult ? job.resultURL : job.originalURL;
+        stageEl.classList.toggle('checkerboard', showingResult);
+        stageEl.classList.toggle('bg-slate-900/50', !showingResult);
+        toggleLabel.setAttribute('data-state', showingResult ? 'result' : 'original');
+        toggleLabel.setAttribute('data-i18n', showingResult ? 'toggle_original' : 'toggle_result');
+        toggleLabel.textContent = t(showingResult ? 'toggle_original' : 'toggle_result');
+      });
+
+      applyI18n();
+      return card;
+    }
+
+    function setCardStatus(job, status, msg) {
+      const card = document.getElementById('card-' + job.id);
+      if (!card) return;
+      const badge = card.querySelector('[data-role="badge"]');
+      const overlay = card.querySelector('[data-role="overlay"]');
+      const overlayText = card.querySelector('[data-role="overlay-text"]');
+      const imgEl = card.querySelector('[data-role="img"]');
+      const dl = card.querySelector('[data-role="download"]');
+      const toggle = card.querySelector('[data-role="toggle"]');
+
+      const cls = {
+        pending: 'bg-slate-700 text-slate-300',
+        processing: 'bg-sky-500/20 text-sky-300',
+        done: 'bg-emerald-500/20 text-emerald-300',
+        error: 'bg-red-500/20 text-red-300',
+      }[status] || 'bg-slate-700 text-slate-300';
+      badge.setAttribute('data-i18n', 'badge_' + status);
+      badge.textContent = t('badge_' + status);
+      badge.className = 'text-[11px] font-semibold px-2 py-0.5 rounded-full ' + cls;
+
+      if (status === 'processing') {
+        overlay.classList.remove('hidden');
+        overlay.querySelector('.spinner')?.classList.remove('hidden');
+        overlayText.textContent = msg || t('card_init');
+      } else if (status === 'done') {
+        overlay.classList.add('hidden');
+        imgEl.src = job.resultURL;
+        imgEl.classList.remove('hidden');
+        toggle.classList.remove('hidden');
+        dl.href = job.resultURL;
+        dl.setAttribute('download', job.name.replace(/\.[^.]+$/, '') + '-nukki.png');
+        dl.classList.remove('hidden'); dl.classList.add('flex');
+      } else if (status === 'error') {
+        overlay.classList.remove('hidden');
+        overlay.querySelector('.spinner')?.classList.add('hidden');
+        overlayText.innerHTML = '<span class="text-red-300">' + t('card_error') + '</span>';
+      }
+    }
+
+    function updateOverall() {
+      const total = jobs.length;
+      const done = jobs.filter(j => j.status === 'done').length;
+      const failed = jobs.filter(j => j.status === 'error').length;
+      const finished = done + failed;
+      const adHint = document.getElementById('adHint');
+
+      if (total === 0) {
+        overallTitle.textContent = t('over_preparing');
+        overallSub.textContent = t('over_preparing_sub');
+        return;
+      }
+      if (finished < total) {
+        overallSpinner.classList.remove('hidden'); overallSpinnerRing.classList.remove('hidden'); overallDone.classList.add('hidden');
+        overallTitle.textContent = t('over_processing', { finished, total });
+        overallSub.textContent = t('over_processing_sub');
+        if (adHint) { adHint.setAttribute('data-i18n', 'ad_hint_wait'); adHint.textContent = t('ad_hint_wait'); }
+      } else {
+        overallSpinner.classList.add('hidden'); overallSpinnerRing.classList.add('hidden');
+        overallDone.classList.remove('hidden'); lucide.createIcons({ nodes: [overallDone] });
+        overallTitle.textContent = t('over_done', { done, failed });
+        overallSub.textContent = failed > 0 ? t('over_done_sub_fail') : t('over_done_sub_ok');
+        if (adHint) { adHint.setAttribute('data-i18n', 'ad_hint_done'); adHint.textContent = t('ad_hint_done'); }
+      }
+      downloadAllBtn.disabled = done === 0;
+    }
+
+    async function runQueue() {
+      if (isRunning) return;
+      isRunning = true;
+      for (const job of jobs) {
+        if (job.status !== 'pending') continue;
+        job.status = 'processing';
+        setCardStatus(job, 'processing', t('card_init'));
+        updateOverall();
+        try {
+          const blob = await removeBackground(job.file, {
+            progress: (key, current, total) => {
+              const pct = total ? Math.round((current / total) * 100) : 0;
+              const msg = (key && key.startsWith('fetch')) ? t('prog_model', { p: pct }) : t('prog_nukki', { p: pct });
+              setCardStatus(job, 'processing', msg);
+            },
+          });
+          job.resultBlob = blob;
+          job.resultURL = URL.createObjectURL(blob);
+          job.status = 'done';
+          setCardStatus(job, 'done');
+        } catch (err) {
+          console.error('처리 실패:', job.name, err);
+          job.status = 'error';
+          setCardStatus(job, 'error');
+        }
+        updateOverall();
+      }
+      isRunning = false;
+    }
+
+    function addFiles(fileList) {
+      clearError();
+      const files = Array.from(fileList || []);
+      if (files.length === 0) return;
+
+      const rejected = [], accepted = [];
+      for (const file of files) {
+        const err = validateFile(file);
+        if (err) rejected.push(`${file.name}: ${t(err)}`);
+        else accepted.push(file);
+      }
+      if (rejected.length) showError(t('err_rejected', { list: rejected.join(' / ') }));
+      if (accepted.length === 0) { if (jobs.length === 0) showView('upload'); return; }
+
+      for (const file of accepted) {
+        const job = { id: ++jobSeq, file, name: file.name || `image-${jobSeq}`, originalURL: URL.createObjectURL(file), resultURL: null, resultBlob: null, status: 'pending' };
+        jobs.push(job);
+        createCard(job);
+        setCardStatus(job, 'pending');
+      }
+      showView('workspace');
+      updateOverall();
+      runQueue();
+    }
+
+    downloadAllBtn.addEventListener('click', async () => {
+      const done = jobs.filter(j => j.status === 'done' && j.resultBlob);
+      if (done.length === 0) return;
+      const original = downloadAllBtn.innerHTML;
+      downloadAllBtn.disabled = true;
+      downloadAllBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> ' + t('btn_zipping');
+      lucide.createIcons({ nodes: [downloadAllBtn] });
+      try {
+        const zip = new JSZip();
+        const used = {};
+        for (const job of done) {
+          const base = job.name.replace(/\.[^.]+$/, '') + '-nukki';
+          let fname = base + '.png', n = 1;
+          while (used[fname]) fname = `${base}(${n++}).png`;
+          used[fname] = true;
+          zip.file(fname, job.resultBlob);
+        }
+        const content = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(content);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'background-removed.zip';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
+      } catch (err) {
+        console.error(err); alert(t('alert_zip_fail'));
+      } finally {
+        downloadAllBtn.innerHTML = original;
+        lucide.createIcons({ nodes: [downloadAllBtn] });
+        downloadAllBtn.disabled = false;
+      }
+    });
+
+    function resetAll() {
+      clearError();
+      for (const job of jobs) {
+        if (job.originalURL) URL.revokeObjectURL(job.originalURL);
+        if (job.resultURL) URL.revokeObjectURL(job.resultURL);
+      }
+      jobs = [];
+      cardsGrid.innerHTML = '';
+      overallSpinner.classList.add('hidden'); overallSpinnerRing.classList.add('hidden'); overallDone.classList.add('hidden');
+      downloadAllBtn.disabled = true;
+      showView('upload');
+    }
+    resetBtn.addEventListener('click', resetAll);
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => { addFiles(e.target.files); fileInput.value = ''; });
+    ['dragenter', 'dragover'].forEach(evt => dropZone.addEventListener(evt, (e) => {
+      e.preventDefault(); e.stopPropagation();
+      dropZone.classList.add('border-sky-500', 'bg-sky-500/10', 'scale-[1.02]');
+    }));
+    ['dragleave', 'drop'].forEach(evt => dropZone.addEventListener(evt, (e) => {
+      e.preventDefault(); e.stopPropagation();
+      dropZone.classList.remove('border-sky-500', 'bg-sky-500/10', 'scale-[1.02]');
+    }));
+    dropZone.addEventListener('drop', (e) => { if (e.dataTransfer?.files?.length) addFiles(e.dataTransfer.files); });
+    window.addEventListener('dragover', (e) => e.preventDefault());
+    window.addEventListener('drop', (e) => e.preventDefault());
+
+    document.getElementById('langSwitch').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-lang]');
+      if (btn) setLang(btn.getAttribute('data-lang'), true);
+    });
+
+    /* ---------------- 초기화 ---------------- */
+    lucide.createIcons();
+    setupHreflang();
+    setLang(detectLang(), false);
+    showView('upload');
+  </script>
+</body>
+</html>
